@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galaxy Movie App</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      color: #ffffff;
+      background: #0d253f;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Background video */
+    #bgVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    header {
+      background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+      padding: 20px;
+      text-align: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5em;
+      color: #01b4e4;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .search-bar {
+      margin: 2rem auto;
+      max-width: 800px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 0.8rem;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.2); /* Make input background semi-transparent */
+      color: #ffffff; /* Make input text white */
+    }
+
+    .search-bar button {
+      padding: 0.8rem;
+      border-radius: 5px;
+      border: none;
+      background-color: rgba(255, 255, 255, 0.2); /* Make button background semi-transparent */
+      color: #ffffff; /* Make button text white */
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .movie-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 20px;
+      margin-top: 120px; /* account for fixed header */
+    }
+
+    .movie-container div {
+      background: rgba(255, 255, 255, 0.1); /* Make movie card background semi-transparent */
+      border-radius: 10px;
+      margin: 10px;
+      padding: 20px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-align: center;
+      color: #ffffff;
+      font-size: 1.2em;
+      cursor: pointer;
+      width: 200px;
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .movie-container div img {
+      max-width: 100%;
+      max-height: 70%;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .movie-container div:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .movie-container div p {
+      font-size: 1em; /* Make font size smaller */
+      font-weight: normal; /* Remove bold */
+      color: #ffffff; /* Make font color white */
+      text-shadow: none; /* Remove text shadow */
+    }
+
+    /* Modal styling */
+    #movieModal {
+      position: fixed; 
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%; 
+      display: none; /* Ensure modal is hidden initially */
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.8);
+      z-index: 50;
+    }
+
+    #movieModal div {
+      background: #000000; /* Make modal background black */
+      border-radius: 10px;
+      padding: 30px;
+      width: 80%; /* Large size */
+      max-width: 900px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto; /* make popup scrollable */
+    }
+
+    #closeModal {
+      position: absolute;
+      top: 15px;
+      right: 25px;
+      font-size: 2em;
+      color: #01b4e4;
+      cursor: pointer;
+    }
+
+    #modalTitle {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2em;
+      color: #01b4e4;
+    }
+
+    #trailer {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #movieDetails, #cast, #ottAvailability, #additionalDetails {
+      margin-bottom: 20px;
+    }
+
+    /* Responsive media queries */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2em;
+      }
+      .search-bar {
+        flex-direction: column;
+      }
+      .search-bar input {
+        width: 80%;
+      }
+      .movie-container div {
+        width: 150px;
+        height: 220px;
+      }
+      #movieModal div {
+        width: 90%;
+        max-width: 600px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 1.6em;
+      }
+      .search-bar input {
+        width: 90%;
+      }
+      .movie-container div {
+        width: 120px;
+        height: 180px;
+      }
+      #movieModal div {
+        width: 95%;
+        max-width: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <video id="bgVideo" autoplay muted loop playsinline preload="auto">
+    <source src="b1.mp4" type="video/mp4">
+  </video>
+
+  <header>
+    <h1>Galaxy Movie App</h1>
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Search for a movie...">
+      <button id="searchButton">Search</button>
+    </div>
+  </header>
+  
+  <div class="movie-container" id="movieContainer"></div>
+
+  <div id="movieModal">
+    <div>
+      <span id="closeModal">&times;</span>
+      <h2 id="modalTitle"></h2>
+      <div id="trailer"></div>
+      <div id="movieDetails"></div>
+      <div id="cast"></div>
+      <div id="ottAvailability"></div>
+      <div id="additionalDetails"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const response = await fetch('/env');
+        const env = await response.json();
+        const apiKey = env.API_KEY;
+        const apiUrl = 'https://api.themoviedb.org/3';
+        const movieContainer = document.getElementById('movieContainer');
+        const searchInput = document.getElementById('search');
+        const searchButton = document.getElementById('searchButton');
+        const movieModal = document.getElementById('movieModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const trailer = document.getElementById('trailer');
+        const movieDetailsContainer = document.getElementById('movieDetails');
+        const castContainer = document.getElementById('cast');
+        const ottAvailability = document.getElementById('ottAvailability');
+        const additionalDetails = document.getElementById('additionalDetails');
+        const movieCache = JSON.parse(localStorage.getItem('movieCache')) || {};
+
+        closeModal.onclick = () => {
+          movieModal.style.display = 'none';
+          trailer.innerHTML = '';
+          movieDetailsContainer.innerHTML = '';
+          castContainer.innerHTML = '';
+          ottAvailability.innerHTML = '';
+          additionalDetails.innerHTML = '';
+        };
+        window.onclick = (e) => {
+          if (e.target === movieModal) {
+            movieModal.style.display = 'none';
+            trailer.innerHTML = '';
+            movieDetailsContainer.innerHTML = '';
+            castContainer.innerHTML = '';
+            ottAvailability.innerHTML = '';
+            additionalDetails.innerHTML = '';
+          }
+        };
+
+        function debounce(func, delay) {
+          let timeoutId;
+          return function(...args) {
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+              func.apply(this, args);
+            }, delay);
+          };
+        }
+
+        searchButton.addEventListener('click', debounce(filterMovies, 300));
+        searchInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            filterMovies();
+          }
+        });
+
+        async function filterMovies() {
+          const query = searchInput.value.trim();
+          if (query) {
+            fetchMovies(query);
+          } else {
+            fetchPopularMovies();
+          }
+        }
+
+        async function fetchMovies(query) {
+          const cacheKey = `${query}`;
+          if (movieCache[cacheKey]) {
+            displayMovies(movieCache[cacheKey]);
+            return;
+          }
+          try {
+            let url = `${apiUrl}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            movieCache[cacheKey] = data.results;
+            localStorage.setItem('movieCache', JSON.stringify(movieCache));
+            displayMovies(data.results);
+          } catch (error) {
+            console.error('Error fetching movies:', error);
+          }
+        }
+
+        async function fetchPopularMovies() {
+          const cacheKey = `popular`;
+          if (movieCache[cacheKey]) {
+            displayMovies(movieCache[cacheKey]);
+            return;
+          }
+          try {
+            let url = `${apiUrl}/movie/popular?api_key=${apiKey}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            movieCache[cacheKey] = data.results;
+            localStorage.setItem('movieCache', JSON.stringify(movieCache));
+            displayMovies(data.results);
+          } catch (error) {
+            console.error('Error fetching popular movies:', error);
+          }
+        }
+
+        function displayMovies(movies) {
+          movieContainer.innerHTML = '';
+          const fragment = document.createDocumentFragment();
+          movies.forEach(movie => {
+            const movieDiv = document.createElement('div');
+            const posterPath = movie.poster_path
+              ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+              : 'https://via.placeholder.com/200x300?text=Poster+will+be+available+soon';
+            movieDiv.innerHTML = `
+              <img src="${posterPath}" alt="${movie.title}"/>
+              <p>${movie.title}</p>
+            `;
+            movieDiv.onclick = () => showMovieDetails(movie);
+            fragment.appendChild(movieDiv);
+          });
+          movieContainer.appendChild(fragment);
+        }
+
+        async function showMovieDetails(movie) {
+          modalTitle.textContent = movie.title;
+          trailer.innerHTML = '';
+          movieDetailsContainer.innerHTML = '';
+          castContainer.innerHTML = '';
+          ottAvailability.innerHTML = '';
+          additionalDetails.innerHTML = '';
+
+          const [videoUrl, details, cast, ottData] = await Promise.all([
+            fetchTrailer(movie.id),
+            fetchMovieDetails(movie.id),
+            fetchCast(movie.id),
+            fetchOTTAvailability(movie.id)
+          ]);
+
+          if (videoUrl) {
+            trailer.innerHTML = `
+              <iframe width="560" height="315"
+                      src="${videoUrl}?autoplay=1"
+                      frameborder="0"
+                      allow="autoplay; encrypted-media"
+                      allowfullscreen>
+              </iframe>
+            `;
+          } else {
+            trailer.innerHTML = '<p>Trailer will be available soon!</p>';
+          }
+
+          let detailsHtml = `
+            <p><strong>Overview:</strong> ${details.overview}</p>
+            <p><strong>Release Date:</strong> ${details.release_date}</p>
+            <p><strong>Runtime:</strong> ${details.runtime} min</p>
+            <p><strong>Tagline:</strong> ${details.tagline}</p>
+            <p><strong>Original Language:</strong> ${details.original_language}</p>
+            <p><strong>Status:</strong> ${details.status}</p>
+            <p><strong>Rating:</strong> ${details.vote_average}/10</p>
+            <p><strong>Vote Count:</strong> ${details.vote_count}</p>
+            <p><strong>Popularity Score:</strong> ${details.popularity}</p>
+            <p><strong>Genres:</strong> ${details.genres.map(g => g.name).join(', ')}</p>
+            <p><strong>Keywords:</strong> ${details.keywords.keywords.map(k => k.name).join(', ')}</p>
+            <p><strong>Director:</strong> ${details.credits.crew.find(c => c.job === 'Director')?.name || 'N/A'}</p>
+            <p><strong>Production Companies:</strong> ${details.production_companies.map(pc => pc.name).join(', ')}</p>
+            <p><strong>Production Countries:</strong> ${details.production_countries.map(pc => pc.name).join(', ')}</p>
+            <p><strong>Budget:</strong> $${details.budget.toLocaleString()}</p>
+            <p><strong>Revenue:</strong> $${details.revenue.toLocaleString()}</p>
+            <p><strong>Homepage:</strong> <a href="${details.homepage}" target="_blank">${details.homepage}</a></p>
+            <p><strong>IMDB Link:</strong> <a href="https://www.imdb.com/title/${details.imdb_id}" target="_blank">IMDB</a></p>
+          `;
+          movieDetailsContainer.innerHTML = detailsHtml;
+
+          if (cast && cast.length > 0) {
+            let castHtml = '<p><strong>Cast:</strong></p><ul>';
+            cast.forEach(actor => {
+              castHtml += `<li>${actor.name} as ${actor.character}</li>`;
+            });
+            castHtml += '</ul>';
+            castContainer.innerHTML = castHtml;
+          } else {
+            castContainer.innerHTML = '<p>Cast information will be available soon!</p>';
+          }
+
+          if (ottData && ottData.length > 0) {
+            let ottHtml = '<p><strong>Available on:</strong></p><ul>';
+            ottData.forEach(platform => {
+              ottHtml += `<li>${platform.provider_name}</li>`;
+            });
+            ottHtml += '</ul>';
+            ottAvailability.innerHTML = ottHtml;
+          } else {
+            ottAvailability.innerHTML = '<p>OTT availability information will be available soon!</p>';
+          }
+
+          movieModal.style.display = 'flex';
+        }
+
+        async function fetchTrailer(movieId) {
+          try {
+            const response = await fetch(`${apiUrl}/movie/${movieId}/videos?api_key=${apiKey}`);
+            const data = await response.json();
+            const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+            return trailer ? `https://www.youtube.com/embed/${trailer.key}` : null;
+          } catch (error) {
+            console.error('Error fetching trailer:', error);
+            return null;
+          }
+        }
+
+        async function fetchMovieDetails(movieId) {
+          try {
+            const response = await fetch(`${apiUrl}/movie/${movieId}?api_key=${apiKey}&append_to_response=credits,keywords`);
+            return await response.json();
+          } catch (error) {
+            console.error('Error fetching details:', error);
+            return {};
+          }
+        }
+
+        async function fetchCast(movieId) {
+          try {
+            const response = await fetch(`${apiUrl}/movie/${movieId}/credits?api_key=${apiKey}`);
+            const data = await response.json();
+            return data.cast ? data.cast.slice(0, 10) : [];
+          } catch (error) {
+            console.error('Error fetching cast:', error);
+            return [];
+          }
+        }
+
+        async function fetchOTTAvailability(movieId) {
+          try {
+            const response = await fetch(`${apiUrl}/movie/${movieId}/watch/providers?api_key=${apiKey}`);
+            const data = await response.json();
+            return data.results.US ? data.results.US.flatrate : [];
+          } catch (error) {
+            console.error('Error fetching OTT availability:', error);
+            return [];
+          }
+        }
+
+        // Load popular movies by default
+        fetchPopularMovies();
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      }
+    });
+  </script>
+</body>
+</html>
