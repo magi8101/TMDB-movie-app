@@ -110,7 +110,7 @@ The app will soon be hosted online. 🌟 Stay tuned for updates!
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache License](LICENSE).
 
 ---
 
